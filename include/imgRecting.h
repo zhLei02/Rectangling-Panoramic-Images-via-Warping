@@ -28,6 +28,7 @@ public:
     
     void recting();
 
+    imgRecting(Config _config):config(_config){}
     ~imgRecting()
     {
         if(textureID)

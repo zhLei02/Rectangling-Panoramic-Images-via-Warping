@@ -1,8 +1,9 @@
 #include <imgRecting.h>
 #include <filesystem>
 
-#define DEBUG_TIME
-// #define DEBUG_MESH
+#define DEBUG_TIME // 计时
+#define DEBUG_IMGSIZE // 显示原图像大小
+// #define DEBUG_MESH // 显示网格的变换
 
 namespace fs = std::filesystem;
 using namespace std;
@@ -14,6 +15,9 @@ void imgRecting::recting()
         cout<<"img is empty"<<endl;
         return;
     }
+#ifdef DEBUG_IMGSIZE
+    cout<<"原图像大小："<<img.rows<<" "<<img.cols<<endl;
+#endif
 
 #ifdef DEBUG_TIME
     // 开始计时
@@ -24,7 +28,11 @@ void imgRecting::recting()
     Mat scaled_img;
     resize(img,scaled_img,Size(0,0),0.5,0.5); // 缩放比例0.5
 
-    config = Config(scaled_img.rows,scaled_img.cols); // 配置参数 默认20行20列网格 每个网格有25条线
+    config.rows = scaled_img.rows;
+    config.cols = scaled_img.cols;
+    config.row_len = (double)(config.rows-1) / config.mesh_quad_rows;
+    config.col_len = (double)(config.cols-1) / config.mesh_quad_cols;
+    // config = Config(scaled_img.rows,scaled_img.cols); // 配置参数 默认20行20列网格 每个网格有25条线
     Mat mask = getMask(scaled_img);
 
     // 局部变形
@@ -49,7 +57,6 @@ void imgRecting::recting()
     GlobalWraping gw(scaled_img, mask, config);
     SparseMatrix<double,RowMajor> shape_mat = gw.get_shape_mat(mesh); // 获取形变矩阵
     cout<<"形变约束矩阵计算完成"<<endl;
-    SparseMatrix<double,RowMajor> Q_mat = gw.get_Q_mat(mesh); // 获取Q矩阵  将变换应用到全局坐标系中用到的矩阵
     pair<SparseMatrix<double,RowMajor>,VectorXd> pair_dvec_B = gw.get_boundary_mat(mesh); // 获取边界约束
     cout<<"边界约束计算完成"<<endl;
 
@@ -59,6 +66,7 @@ void imgRecting::recting()
     vector<vector<vector<LineD>>> line_seg_mesh = gw.init_line_seg(mesh, lineseg_flatten, id_theta, rotate_theta); // 初始化按方格切割线段
     cout<<"初始化按方格切割线段完成"<<endl;
 
+    SparseMatrix<double,RowMajor> Q_mat = gw.get_Q_mat(mesh); // 获取Q矩阵  将变换应用到全局坐标系中用到的矩阵
     int times = config.times; // 迭代次数
 
     for(int i=0;i<times;i++)

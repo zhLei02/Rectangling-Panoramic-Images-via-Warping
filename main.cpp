@@ -21,7 +21,8 @@ int main(int argc, char** argv)
     // }
     // imshow("Origin", image);
 
-    imgRecting ir;
+    Config config(0, 0, 20, 20, 25, 10); // ir会使用config后四个参数即 mesh_rows,mesh_cols,lines_per_quad,times初始化config
+    imgRecting ir(config);
     ir.init_gl(argv[1]);
     ir.recting();
     ir.display();
